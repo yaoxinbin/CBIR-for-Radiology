@@ -21,6 +21,7 @@ class image_descriptors():
 		# convert to grayscale
 		gray= cv2.cvtColor(pixel_array,cv2.COLOR_BGR2GRAY)
 
+		# use ORD. similar to SIFT + SURF - and is free to use (unlike the other 2)
 		orb = cv2.ORB()
 
 		# detector of the points in the image
@@ -40,7 +41,9 @@ class image_descriptors():
 	def hist(pixel_array, bins = 10):
      # with thanks to http://www.pyimagesearch.com/2014/12/01/complete-guide-building-image-search-engine-python-opencv/
      # and https://github.com/danuzclaudes/image-retrieval-OpenCV/		
+
           hsv = cv2.cvtColor(pixel_array, cv2.COLOR_BGR2HSV)
+
           feats = []
           
           # get image dimensions
@@ -121,7 +124,7 @@ def read_images_from_folder(location):
 
 		else:
 		
-			image_dict[image_path]=cv2.imread(image_path)
+			image_dict[image_path]=cv2.imread(image_path,1)
 
 	return image_dict
 
@@ -134,6 +137,10 @@ def add_image_features(image_dict, kind = 'sift'):
 	image_feats_dict = {}
 
 	for image in image_dict.keys():
+
+		if image[0] == '.': continue # ignore non-image files
+
+		print(str(image))
 
 		if kind == 'sift':
 
@@ -251,17 +258,17 @@ def return_images(image_sim_dist_dict, image_dict, k=5, distance=True):
 
 if start == True:
     
-    os.chdir('/Users/Sriram/Desktop/CBIR/images_sample/')
+    os.chdir('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology/images_sample')
     
     image_dict = read_images_from_folder('./')
     
-    image_feats_dict = add_image_features(image_dict, kind = 'hist')
+    image_feats_dict = add_image_features(image_dict, kind = 'sift')
     
-    query_image_arr = cv2.imread('171_1') # change as needed
+    query_image_arr = cv2.imread('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology/images_sample/171_1',1) # change as needed
     
     cv2.imshow('QUERY IMAGE', query_image_arr)
 
-    image_sim_dict = calc_sim(query_image_arr, image_feats_dict, method='euclidean', k=10)
+    image_sim_dict = calc_sim(query_image_arr, image_feats_dict, method='sift', k=10)
         
     result_image_id_list = return_images(image_sim_dict, image_dict, k=5, distance=True)
     
