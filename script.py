@@ -16,7 +16,7 @@ class image_descriptors():
 
 	# returns feature array obtained using sift algorithm
 	@staticmethod
-	def sift(pixel_array):
+	def orb(pixel_array):
 
 		# convert to grayscale
 		gray= cv2.cvtColor(pixel_array,cv2.COLOR_BGR2GRAY)
@@ -132,7 +132,7 @@ def read_images_from_folder(location):
 # for each image in dict, extract image features and add to new dict
 # this function will updated as more feature extraction techniques 
 # are introduced
-def add_image_features(image_dict, kind = 'sift'):
+def add_image_features(image_dict, kind = 'orb'):
 
 	image_feats_dict = {}
 
@@ -142,9 +142,9 @@ def add_image_features(image_dict, kind = 'sift'):
 
 		print(str(image))
 
-		if kind == 'sift':
+		if kind == 'orb':
 
-			image_feats_dict[image] = image_descriptors.sift(image_dict[image])
+			image_feats_dict[image] = image_descriptors.orb(image_dict[image])
 
 		if kind == 'hist':
 
@@ -165,7 +165,7 @@ def add_image_features(image_dict, kind = 'sift'):
 # returns keys of the top-k images
 # euclidean and cosine used for histogram and sift has its own method using bag of words approach
 
-def calc_dist_sim(query_image_arr, image_feats_dict, method='sift', k=10):
+def calc_dist_sim(query_image_arr, image_feats_dict, method='orb', k=10):
 
 	image_sim_dist_dict = {}
 
@@ -210,12 +210,12 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='sift', k=10):
 		image_sim_dist_dict = dict((key, val) for key,val in zip(image_feats_dict.keys(),euclidean_dists))
       
 
-	if method == 'sift':
+	if method == 'orb':
 
 		# init the matching method
 		matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
-		# extract sift features from query image
+		# extract orb features from query image
 		query_feats = image_descriptors.sift(query_image_arr)
 
 		# find the match between query and each training image
@@ -258,8 +258,9 @@ def return_images(image_sim_dist_dict, image_dict, k=5, distance=True):
 
 if start == True:
     
-    os.chdir('/Users/Sriram/Desktop/DePaul/CBIR-for-Radiology/images_sample')
-    
+    #os.chdir('/Users/Sriram/Desktop/DePaul/CBIR-for-Radiology/images_sample')
+    os.chdir('C:/Users/SYARLAG1/Documents/CBIR-for-Radiology')
+
     image_dict = read_images_from_folder('./')
     
     image_feats_dict = add_image_features(image_dict, kind = 'sift')
