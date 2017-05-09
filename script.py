@@ -229,6 +229,21 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='orb', k=10):
 			# assign query, image dist as the average
 			image_sim_dist_dict[image] = sum(distances)/(len(distances)+1)
 
+	# bag of visual words approach to retreive images
+	if method == 'bag_of_words':
+
+		# apply k-means to find the centroids 
+
+		# find closest center to each feature 
+
+		# create DTM matrix (term - center, d - image) - fills in with term freq not tfidf
+
+		# extract query feats and create term freq vector similar to above
+
+		# use shannon divergence to find distance to each image from query
+
+		pass
+
 
 	return image_sim_dist_dict
 
