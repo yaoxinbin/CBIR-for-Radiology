@@ -192,7 +192,7 @@ def jensen_shannon_div(query_arr,train_mat):
 # euclidean and cosine used for histogram and sift has its own method using bag of words approach
 # k used if the bag_of_words approach is used
 
-def calc_dist_sim(query_image_arr, image_feats_dict, method='orb', k=10):
+def calc_dist_sim(query_image_arr, image_feats_dict, method='bag_of_words', k=10):
 
 	image_sim_dist_dict = {}
 
@@ -260,23 +260,23 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='orb', k=10):
 	if method == 'bag_of_words':
 
 		# apply k-means to find the centroids
-		train_feats = image_feats_dict.values()
+		train_feats = np.concatenate(image_feats_dict.values())
 
 		k_means = KMeans(n_clusters=k, random_state=seed).fit(train_feats)
 
-		cluster_clusters = k_means.cluster_centers_
+		cluster_centers = k_means.cluster_centers_
 
-		# TODO: loops are too slow --> replace with nunmpy matrix math
+		# TODO: loops are too slow --> replace with numpy matrix math
 		# find closest center to each image keypoint and generate histogram
 		image_hist_dict = {}
 
-		for image_id, each_image in image_feats_dict.values():
+		for image_id, each_image in image_feats_dict.items():
 
 			image_hist_dict[image_id] = [0] * k
 
-			for key_point in each_image:
+			for keypoint in each_image:
 
-				diff = cluster_centers_ - repmat(keypoint,len(cluster_centers_), 1)
+				diff = cluster_centers - repmat(keypoint,len(cluster_centers), 1)
 
 				euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff)
 
@@ -288,9 +288,9 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='orb', k=10):
 		query_hist = np.array([0] * k)
 
 		# convert query_feats into the histogram like above
-		for key_point in query_feats:
+		for keypoint in query_feats:
 
-			diff = cluster_centers_ - repmat(keypoint,len(cluster_centers_), 1)
+			diff = cluster_centers - repmat(keypoint,len(cluster_centers), 1)
 
 			euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff)
 
@@ -331,19 +331,19 @@ def return_images(image_sim_dist_dict, image_dict, k=5, distance=True):
 if start == True:
     
     #os.chdir('/Users/Sriram/Desktop/DePaul/CBIR-for-Radiology/images_sample')
-    os.chdir('C:/Users/SYARLAG1/Documents/CBIR-for-Radiology')
+    os.chdir('C:/Users/SYARLAG1/Documents/CBIR-for-Radiology/images_sample')
 
     image_dict = read_images_from_folder('./')
     
-    image_feats_dict = add_image_features(image_dict, kind = 'sift')
+    image_feats_dict = add_image_features(image_dict, kind = 'orb')
     
     query_image_arr = cv2.imread('169_1') # change as needed
     
-    cv2.imshow('QUERY IMAGE', query_image_arr)
+    #cv2.imshow('QUERY IMAGE', query_image_arr)
 
-    image_sim_dict = calc_dist_sim(query_image_arr, image_feats_dict, method='sift', k=10)
+    image_dist_dict = calc_dist_sim(query_image_arr, image_feats_dict, method='bag_of_words', k=10)
         
-    result_image_id_list = return_images(image_sim_dict, image_dict, k=5, distance=True)
+    result_image_id_list = return_images(image_dist_dict, image_dict, k=5, distance=True)
     
     
     
