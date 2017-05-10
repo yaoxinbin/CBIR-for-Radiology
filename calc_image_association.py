@@ -3,7 +3,6 @@ from __future__ import print_function
 import cv2
 import numpy as np
 from numpy.matlib import repmat# for repmat
-from read_images_gen_feats import *
 from sklearn.cluster import KMeans 
 
 seed = 99 # for randomized computations
@@ -36,15 +35,13 @@ def jensen_shannon_div(query_arr,train_mat):
 # euclidean and cosine used for histogram and sift has its own method using bag of words approach
 # k used if the bag_of_words approach is used
 
-def calc_dist_sim(query_image_arr, image_feats_dict, method='bag_of_words', k=10):
+def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', k=10):
 
 	image_sim_dist_dict = {}
 
 	if method == 'cosine':
 
-		# get the histogram features for the query image
-		query_feats = image_descriptors.hist(query_image_arr)
-		
+		# get the histograms of the database images 		
 		mat = image_feats_dict.values()
 
 		# L-2 norms of the train image featuers
@@ -67,9 +64,7 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='bag_of_words', k=10
 
 	if method == 'euclidean':
 
-		# get the histogram features for the query image
-		query_feats = image_descriptors.hist(query_image_arr)
-
+		# get the histograms of the database images 
 		mat = image_feats_dict.values()
 
 		diff = mat - repmat(query_feats,len(mat), 1)
@@ -85,9 +80,6 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='bag_of_words', k=10
 
 		# init the matching method
 		matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
-		# extract orb features from query image
-		query_feats = image_descriptors.orb(query_image_arr)
 
 		# find the match between query and each training image
 		for image in image_feats_dict:
@@ -126,9 +118,6 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='bag_of_words', k=10
 
 				image_hist_dict[image_id][np.argmin(euclidean_dists)] += 1 # add to frequency of correponding center
 
-		# extract orb features from query image
-		query_feats = image_descriptors.sift(query_image_arr)
-
 		query_hist = np.array([0] * k)
 
 		# convert query_feats into the histogram like above
@@ -141,7 +130,7 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='bag_of_words', k=10
 			query_hist[np.argmin(euclidean_dists)] += 1
 
 
-		# use shannon divergence to find distance to each image from query
+		# use jesen-shannon divergence to find distance to each image from query
 		JS_distances = jensen_shannon_div(query_hist, np.array(image_hist_dict.values()))
 
 		image_sim_dist_dict = dict((key, val) for key,val in zip(image_feats_dict.keys(),JS_distances))

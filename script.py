@@ -5,9 +5,6 @@ if __name__ == '__main__':
 
 	import cv2
 	import os
-	import dicom
-	import numpy as np
-
 	from calc_image_association import *
 	from read_images_gen_feats import *
 

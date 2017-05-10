@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import cv2
 import numpy as np
+import dicom
+import os
 
 # returns the pixel array of dicom image
 def read_dicom_image(image_path):
