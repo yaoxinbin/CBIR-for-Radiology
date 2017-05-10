@@ -21,11 +21,11 @@ def read_images_from_folder(location):
 
 		if image_path[-3:] == 'dcm': # if dicom image
 
-			image_dict[image_path]=read_dicom_image(image_path).pixel_array
+			image_dict[image_path]=read_dicom_image(location+image_path).pixel_array
 
 		else:
 		
-			image_dict[image_path]=cv2.imread(image_path)
+			image_dict[image_path]=cv2.imread(location+image_path)
 
 	return image_dict
 

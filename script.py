@@ -5,18 +5,17 @@ if __name__ == '__main__':
 
 	import cv2
 	import os
+ 	#os.chdir('/Users/Sriram/Desktop/DePaul/CBIR-for-Radiology/images_sample')
+	os.chdir('C:/Users/SYARLAG1/Documents/CBIR-for-Radiology')
 	from calc_image_association import *
 	from read_images_gen_feats import *
 
 
-	#os.chdir('/Users/Sriram/Desktop/DePaul/CBIR-for-Radiology/images_sample')
-	os.chdir('C:/Users/SYARLAG1/Documents/CBIR-for-Radiology/images_sample')
-
-	image_dict = read_images_from_folder('./')
+	image_dict = read_images_from_folder('./images_sample/') # make sure '/' is included at end!
 
 	image_feats_dict = add_image_features(image_dict, kind = 'sift')
 
-	query_image_arr = cv2.imread('169_1') # change as needed
+	query_image_arr = cv2.imread('./images_sample/3_12') # change as needed
 
 	query_image_feats = image_descriptors.sift(query_image_arr)
 
