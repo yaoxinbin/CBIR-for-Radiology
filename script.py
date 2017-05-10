@@ -7,7 +7,6 @@ import dicom
 import numpy as np
 from numpy.matlib import repmat# for repmat
 
-from scipy.spatial.distance import * # dist and sim metrics
 from sklearn.cluster import KMeans 
 
 seed = 99 # for randomized computations
@@ -38,6 +37,20 @@ class image_descriptors():
 		_, feats = orb.detectAndCompute(gray,None)
 
 		return feats
+
+	@staticmethod
+	def sift(pixel_array):
+
+		# convert to grayscale
+		gray= cv2.cvtColor(pixel_array,cv2.COLOR_BGR2GRAY)
+
+		# use sift
+		sift = cv2.SIFT()
+
+		_, feats = sift.detectAndCompute(gray,None)
+
+		return feats
+
 
 	# returns a relative histogram for each HSV channel
 	@staticmethod
@@ -148,6 +161,10 @@ def add_image_features(image_dict, kind = 'orb'):
 		if kind == 'orb':
 
 			image_feats_dict[image] = image_descriptors.orb(image_dict[image])
+
+		if kind == 'sift':
+
+			image_feats_dict[image] = image_descriptors.sift(image_dict[image])
 
 		if kind == 'hist':
 
@@ -283,7 +300,7 @@ def calc_dist_sim(query_image_arr, image_feats_dict, method='bag_of_words', k=10
 				image_hist_dict[image_id][np.argmin(euclidean_dists)] += 1 # add to frequency of correponding center
 
 		# extract orb features from query image
-		query_feats = image_descriptors.orb(query_image_arr)
+		query_feats = image_descriptors.sift(query_image_arr)
 
 		query_hist = np.array([0] * k)
 
@@ -335,7 +352,7 @@ if start == True:
 
     image_dict = read_images_from_folder('./')
     
-    image_feats_dict = add_image_features(image_dict, kind = 'orb')
+    image_feats_dict = add_image_features(image_dict, kind = 'sift')
     
     query_image_arr = cv2.imread('169_1') # change as needed
     
