@@ -21,9 +21,9 @@ if __name__ == '__main__':
 
 	#cv2.imshow('QUERY IMAGE', query_image_arr)
 
-	image_dist_dict = calc_dist_sim(query_image_feats, image_feats_dict, method='bag_of_words', k=10)
+	image_dist_dict = calc_dist_sim(query_image_feats, image_feats_dict, method='bag_of_words', k=50)
 	    
-	result_image_id_list = return_images(image_dist_dict, image_dict, k=5, distance=True)
+	result_image_id_list = return_images(image_dist_dict, image_dict, k=5, distance=True, show=False)
 
     
     

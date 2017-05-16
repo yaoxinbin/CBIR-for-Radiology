@@ -12,6 +12,11 @@ seed = 99 # for randomized computations
 # using jensen shannon divergence
 def jensen_shannon_div(query_arr,train_mat):
 
+	# normalize arrays so that they become probability distributions
+	query_arr = query_arr/float(np.sum(query_arr))
+	
+	train_mat = np.divide(train_mat.T, np.sum(train_mat,1)).T
+
 	query_mat = repmat(query_arr, len(train_mat), 1)
 	
 	mat_sum = 0.5*(query_mat + train_mat)
@@ -34,8 +39,9 @@ def jensen_shannon_div(query_arr,train_mat):
 # returns keys of the top-k images
 # euclidean and cosine used for histogram and sift has its own method using bag of words approach
 # k used if the bag_of_words approach is used
+# TODO: if cluster_kmeans is false and method='bag of words', then hierarchical clustering will be applied 
 
-def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', k=10):
+def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', cluster_kmeans=True, k=10):
 
 	image_sim_dist_dict = {}
 
@@ -70,7 +76,7 @@ def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', k=10):
 		diff = mat - repmat(query_feats,len(mat), 1)
 
 		# L-2 norms of the train image featuers
-		euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff)
+		euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff, ord=2)
 
 		# add to the dictionary 
 		image_sim_dist_dict = dict((key, val) for key,val in zip(image_feats_dict.keys(),euclidean_dists))
@@ -98,11 +104,12 @@ def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', k=10):
 		# apply k-means to find the centroids
 		train_feats = np.concatenate(image_feats_dict.values())
 
+		# TODO: Kmeans calculation takes the largest amount of time, everything else is fast
 		k_means = KMeans(n_clusters=k, random_state=seed).fit(train_feats)
 
 		cluster_centers = k_means.cluster_centers_
 
-		# TODO: loops are too slow --> replace with numpy matrix math
+		# TODO: loops are slow --> replace with numpy matrix magic
 		# find closest center to each image keypoint and generate histogram
 		image_hist_dict = {}
 
@@ -114,9 +121,9 @@ def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', k=10):
 
 				diff = cluster_centers - repmat(keypoint,len(cluster_centers), 1)
 
-				euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff)
+				euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff, ord=2)
 
-				image_hist_dict[image_id][np.argmin(euclidean_dists)] += 1 # add to frequency of correponding center
+				image_hist_dict[image_id][np.argmin(euclidean_dists)] += 1. # add to frequency of correponding center
 
 		query_hist = np.array([0] * k)
 
@@ -127,11 +134,11 @@ def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', k=10):
 
 			euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff)
 
-			query_hist[np.argmin(euclidean_dists)] += 1
+			query_hist[np.argmin(euclidean_dists)] += 1.
 
-
+		#global JS_distances
 		# use jesen-shannon divergence to find distance to each image from query
-		JS_distances = jensen_shannon_div(query_hist, np.array(image_hist_dict.values()))
+		JS_distances = jensen_shannon_div(np.array(query_hist), np.array(image_hist_dict.values()))
 
 		image_sim_dist_dict = dict((key, val) for key,val in zip(image_feats_dict.keys(),JS_distances))
 
@@ -139,7 +146,7 @@ def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', k=10):
 
 
 # display retrieved images
-def return_images(image_sim_dist_dict, image_dict, k=5, distance=True):
+def return_images(image_sim_dist_dict, image_dict, k=5, distance=True, show=True):
 
 	result_image_id_list = []
 
@@ -152,7 +159,7 @@ def return_images(image_sim_dist_dict, image_dict, k=5, distance=True):
 
 		image_name = 'result ' + str(i) + ': ' + image_id  
 
-		cv2.imshow(image_name, image_dict[image_id])
+		if show: cv2.imshow(image_name, image_dict[image_id])
 
 		result_image_id_list.append(image_id)
 

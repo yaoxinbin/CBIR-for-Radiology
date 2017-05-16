@@ -55,11 +55,29 @@ class image_descriptors():
 
 		return feats
 
+	# TODO: if ellipse=True, then only ellipse of image ketypoints extracted 
 	@staticmethod
-	def sift(pixel_array):
+	def sift(pixel_array, ellipse=False):
 
 		# convert to grayscale
 		gray= cv2.cvtColor(pixel_array,cv2.COLOR_BGR2GRAY)
+
+		if ellipse:
+			
+			# get image dimensions
+			x,y = gray.shape[:2]
+
+			dx, dy = int(x*0.5), int(y*0.5)
+
+			# major and minor axis
+			ex, ey = int(x*0.75)/2, int(y*0.75)/2
+
+			ellipse_mask = np.zeros_like(gray)
+
+			cv2.ellipse(ellipse_mask, (dx, dy), (ex, ey), 0, 0, 360, 255, -1)
+
+			# use binary AND operator to gen required image
+			gray = np.bitwise_and(gray, ellipse_mask)
 
 		# use sift
 		sift = cv2.SIFT()
