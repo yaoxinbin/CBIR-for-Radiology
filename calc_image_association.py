@@ -81,7 +81,7 @@ def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', cluster_k
 		# add to the dictionary 
 		image_sim_dist_dict = dict((key, val) for key,val in zip(image_feats_dict.keys(),euclidean_dists))
       
-
+	# uses hamming distance as metric to find the closest keypoints
 	if method == 'orb':
 
 		# init the matching method
@@ -97,6 +97,30 @@ def calc_dist_sim(query_feats,image_feats_dict, method='bag_of_words', cluster_k
 
 			# assign query, image dist as the average
 			image_sim_dist_dict[image] = sum(distances)/(len(distances)+1)
+
+
+	# currently works for sift
+	if method == 'match_count':
+
+		# initilizalize the matcher
+		bf = cv2.BFMatcher() # L2-norm is default
+
+		for image_id, each_image in image_feats_dict.items():
+			
+			# Match descriptors using knn matching -- tune k as needed
+			matches = bf.knnMatch(query_feats, each_image, k=5)
+			
+			# count number of matches whose ratio is > 0.75
+			match_count = 0
+			
+			for m,n in matches:
+			
+				if m.distance < 0.75*n.distance:
+			
+					match_count += 1# add to sim dict
+			
+			image_sim_dist_dict[image_id] = match_count
+
 
 	# bag of visual words approach to retreive images
 	if method == 'bag_of_words':
@@ -151,7 +175,7 @@ def return_images(image_sim_dist_dict, image_dict, k=5, distance=True, show=True
 	result_image_id_list = []
 
 	# sort based on whether sim or dist measure
-	sorted_list = sorted(image_sim_dist_dict.items(), key=lambda x: x[1], reverse=distance)
+	sorted_list = sorted(image_sim_dist_dict.items(), key=lambda x: x[1], reverse=~distance)
 
 	for i in range(k):
 

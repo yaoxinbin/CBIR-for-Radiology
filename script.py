@@ -10,14 +10,16 @@ if __name__ == '__main__':
 	from calc_image_association import *
 	from read_images_gen_feats import *
 
+	import matplotlib.pyplot as plt
+
 
 	image_dict = read_images_from_folder('./images_sample/') # make sure '/' is included at end!
 
-	image_feats_dict = add_image_features(image_dict, kind = 'sift')
+	image_feats_dict = add_image_features(image_dict, kind = 'sift', ellipse=False)
 
-	query_image_arr = cv2.imread('./images_sample/3_12') # change as needed
+	query_image_arr = cv2.imread('./images_sample/174_3') # change as needed
 
-	query_image_feats = image_descriptors.sift(query_image_arr)
+	query_image_feats = image_descriptors.sift(query_image_arr, ellipse=False)
 
 	#cv2.imshow('QUERY IMAGE', query_image_arr)
 
@@ -25,9 +27,18 @@ if __name__ == '__main__':
 	    
 	result_image_id_list = return_images(image_dist_dict, image_dict, k=5, distance=True, show=False)
 
-    
-    
+	for image_id in result_image_id_list:
 
+		image_location = './images_sample/'+image_id
+
+		# display images
+		img = cv2.imread(image_location)
+
+		plt.figure()
+
+		plt.imshow(img, cmap='gray')
+
+		plt.show()
 
 
 

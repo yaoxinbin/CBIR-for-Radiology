@@ -159,7 +159,7 @@ class image_descriptors():
 # for each image in dict, extract image features and add to new dict
 # this function will updated as more feature extraction techniques 
 # are introduced
-def add_image_features(image_dict, kind = 'sift'):
+def add_image_features(image_dict, kind = 'sift', ellipse=False):
 
 	image_feats_dict = {}
 
@@ -175,7 +175,7 @@ def add_image_features(image_dict, kind = 'sift'):
 
 		if kind == 'sift':
 
-			image_feats_dict[image] = image_descriptors.sift(image_dict[image])
+			image_feats_dict[image] = image_descriptors.sift(image_dict[image], ellipse)
 
 		if kind == 'hist':
 
