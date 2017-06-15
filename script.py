@@ -41,6 +41,42 @@ if __name__ == '__main__':
 		plt.show()
 
 
+### Visualize the images in a mds projection plot of the images
+import numpy as np
+
+
+# from the calc image association function:
+
+# apply k-means to find the centroids
+train_feats = np.concatenate(image_feats_dict.values())
+
+# TODO: Kmeans calculation takes the largest amount of time, everything else is fast
+k_means = KMeans(n_clusters=k, random_state=seed).fit(train_feats)
+
+cluster_centers = k_means.cluster_centers_
+
+# TODO: loops are slow --> replace with numpy matrix magic
+# find closest center to each image keypoint and generate histogram
+image_hist_dict = {}
+
+for image_id, each_image in image_feats_dict.items():
+
+	image_hist_dict[image_id] = [0] * k
+
+	for keypoint in each_image:
+
+		diff = cluster_centers - repmat(keypoint,len(cluster_centers), 1)
+
+		euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff, ord=2)
+
+		image_hist_dict[image_id][np.argmin(euclidean_dists)] += 1. # add to frequency of correponding center
+    
+X_to_project = np.array(image_hist_dict.values())
+
+Y_for_color = 
+
+
+
 
 
 
