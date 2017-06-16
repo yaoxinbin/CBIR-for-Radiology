@@ -48,6 +48,8 @@ import numpy as np
 # from the calc image association function:
 
 # apply k-means to find the centroids
+k = 10
+
 train_feats = np.concatenate(image_feats_dict.values())
 
 # TODO: Kmeans calculation takes the largest amount of time, everything else is fast
@@ -73,7 +75,40 @@ for image_id, each_image in image_feats_dict.items():
     
 X_to_project = np.array(image_hist_dict.values())
 
-Y_for_color = 
+Y_for_color = np.array([int(x.split('_')[0]) for x in image_hist_dict.keys()])
+
+color_lookup_dict = {x[1]:x[0] for x in zip(range(len(set(Y_for_color))),set(Y_for_color))}
+
+# perform MDS with 2 dimensions
+
+seed = 99
+
+from sklearn.manifold import MDS
+
+mds = MDS(random_state=seed)
+
+X_projected = mds.fit_transform(X_to_project)
+
+import matplotlib.pyplot as plt
+
+plt.figure()
+
+for i,data in enumerate(X_projected):
+    
+    colormap = plt.cm.Dark2.colors
+    
+    Y = Y_for_color[i]
+    
+    Y_rank = color_lookup_dict[Y]; print(str(Y), str(Y_rank))
+    
+    if Y_rank >= 7: Y_rank = 7; print('change', str(Y_rank)); continue
+    
+    plt.scatter(data[0],data[1], color=colormap[Y_rank])
+
+
+plt.scatter(X_projected[:,0], X_projected[:,1], color=Y_for_color, cmap=colormap)
+
+
 
 
 
