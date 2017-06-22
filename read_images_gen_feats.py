@@ -144,11 +144,11 @@ class image_descriptors():
            
           return feats
 
-
+	# TODO
 	@staticmethod
 	def geometric(pixel_array):
 		pass
-
+	# TODO
 	@staticmethod
 	def mixed(pixel_array):
 		pass

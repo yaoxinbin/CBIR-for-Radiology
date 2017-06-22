@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
 ### Visualize the images in a mds projection plot of the images
 import numpy as np
-
+from numpy.matlib import repmat
 
 # from the calc image association function:
 
@@ -73,7 +73,9 @@ for image_id, each_image in image_feats_dict.items():
 
 		image_hist_dict[image_id][np.argmin(euclidean_dists)] += 1. # add to frequency of correponding center
     
-X_to_project = np.array(image_hist_dict.values())
+X_to_project_unnormalized = np.array(image_hist_dict.values())
+
+X_to_project = X_to_project_unnormalized / repmat(X_to_project_unnormalized.sum(1), m=k, n=1).T
 
 Y_for_color = np.array([int(x.split('_')[0]) for x in image_hist_dict.keys()])
 
@@ -85,13 +87,15 @@ seed = 99
 
 from sklearn.manifold import MDS
 
-mds = MDS(random_state=seed)
+mds = MDS(random_state=seed, dissimilarity='euclidean')
 
 X_projected = mds.fit_transform(X_to_project)
 
 import matplotlib.pyplot as plt
 
-plt.figure()
+fig, ax = plt.subplots(figsize=(100, 50))
+
+plt.xlim([-400,150])
 
 for i,data in enumerate(X_projected):
     
@@ -103,10 +107,17 @@ for i,data in enumerate(X_projected):
     
     if Y_rank >= 7: Y_rank = 7; print('change', str(Y_rank)); continue
     
-    plt.scatter(data[0],data[1], color=colormap[Y_rank])
+    plt.scatter(data[0],data[1], color='white') # change to color=colormap[Y_rank]
+    #ax.annotate(Y_for_color[i], xy=data)
 
 
-plt.scatter(X_projected[:,0], X_projected[:,1], color=Y_for_color, cmap=colormap)
+for i,xy in enumerate(X_projected):
+    
+    ax.annotate(image_hist_dict.keys()[i], xy=xy, size=10)
+
+fig.savefig('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology/mds_proj_full_image_names_normalized.png', dpi=100)
+#plt.show()
+
 
 
 
