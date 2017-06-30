@@ -6,25 +6,27 @@ if __name__ == '__main__':
 	import cv2
 	import os
  	#os.chdir('/Users/Sriram/Desktop/DePaul/CBIR-for-Radiology/images_sample')
-	os.chdir('C:/Users/SYARLAG1/Documents/CBIR-for-Radiology')
+	os.chdir('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology')
 	from calc_image_association import *
+	from dicom_image_download_extraction import extract_pixels_and_modality
 	from read_images_gen_feats import *
 
 	import matplotlib.pyplot as plt
 
 
-	image_dict = read_images_from_folder('./images_sample/') # make sure '/' is included at end!
-
+	#image_dict_2 = read_images_from_folder('./images_sample/') # make sure '/' is included at end!
+	_,image_dict, image_mod_dict = extract_pixels_and_modality('./images_store/') # comment out if not dicom
 	image_feats_dict = add_image_features(image_dict, kind = 'sift', ellipse=True)
 
-	query_image_arr = cv2.imread('./images_sample/3_12') # change as needed
+	query_image_arr = cv2.imread('./images_sample/3_6') # change as needed
 
 	query_image_feats = image_descriptors.sift(query_image_arr, ellipse=True)
 
 	#cv2.imshow('QUERY IMAGE', query_image_arr)
 
-	image_dist_dict = calc_dist_sim(query_image_feats, image_feats_dict, method='bag_of_words', k=50)
-	    
+	image_dist_dict = calc_dist_sim(query_image_feats, image_feats_dict,
+                                 method='bag_of_words', k=50, dist_measure='Euclidean')
+
 	result_image_id_list = return_images(image_dist_dict, image_dict, k=5, distance=True, show=False)
 
 	for image_id in result_image_id_list:
@@ -41,7 +43,7 @@ if __name__ == '__main__':
 		plt.show()
 
 
-### Visualize the images in a mds projection plot of the images
+### Visualize the images in a mds projection plot of the images ###
 import numpy as np
 from numpy.matlib import repmat
 
@@ -72,7 +74,7 @@ for image_id, each_image in image_feats_dict.items():
 		euclidean_dists = np.apply_along_axis(np.linalg.norm, 1, diff, ord=2)
 
 		image_hist_dict[image_id][np.argmin(euclidean_dists)] += 1. # add to frequency of correponding center
-    
+
 X_to_project_unnormalized = np.array(image_hist_dict.values())
 
 X_to_project = X_to_project_unnormalized / repmat(X_to_project_unnormalized.sum(1), m=k, n=1).T
@@ -98,26 +100,32 @@ fig, ax = plt.subplots(figsize=(100, 50))
 plt.xlim([-400,150])
 
 for i,data in enumerate(X_projected):
-    
+
     colormap = plt.cm.Dark2.colors
-    
+
     Y = Y_for_color[i]
-    
+
     Y_rank = color_lookup_dict[Y]; print(str(Y), str(Y_rank))
-    
+
     if Y_rank >= 7: Y_rank = 7; print('change', str(Y_rank)); continue
-    
+
     plt.scatter(data[0],data[1], color='white') # change to color=colormap[Y_rank]
     #ax.annotate(Y_for_color[i], xy=data)
 
 
 for i,xy in enumerate(X_projected):
-    
+
     ax.annotate(image_hist_dict.keys()[i], xy=xy, size=10)
 
 fig.savefig('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology/mds_proj_full_image_names_normalized.png', dpi=100)
 #plt.show()
 
+#### number of keypoints #####
+image_feats_count_dict = {}
+
+for image_id in image_feats_dict.keys():
+
+    image_feats_count_dict[image_id] = image_feats_dict[image_id].shape[0]
 
 
 
