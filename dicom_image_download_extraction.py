@@ -7,6 +7,7 @@ import urllib
 import os
 from bs4 import BeautifulSoup
 from PIL import Image
+from numpy import uint8, double
 
 
 # iterates through the images in the remote server and downloads all the image
@@ -45,13 +46,15 @@ def download_images(only_dicom=True,
 
 # extracts the modality and pixel array for each dicom image and returns this data
 # in the form of a dictionary: {image_id:(pixel_arr, modality)}
-def extract_pixels_and_modality(dicom_images_loc = 
-                                'C:\Users\syarlag1.DPU\Desktop\CBIR-for-Radiology\images_store'):
-    
+def extract_pixels_and_modality(dicom_images_loc = 'C:\Users\syarlag1.DPU\Desktop\CBIR-for-Radiology\images_store',
+                                normalize=True # normalizes pixel intensities to between 0 and 255
+                                ):
+    # change to directory with images
     os.chdir(dicom_images_loc)
     image_ids_list = os.listdir('./')
     
-    image_id_info_dict = {} # to store pixel arr and modality for each image
+    image_pixel_dict = {} # to store pixel arr of each image
+    image_modality_dict = {} # to store modality of each image
     fail_count = 0 # count of number of images without required attributes
     
     # iterate through each image in the folder
@@ -64,13 +67,17 @@ def extract_pixels_and_modality(dicom_images_loc =
             continue
         
         try:
-            image_id_info_dict[image_id] = (dicom_image_temp.pixel_array, 
-                              dicom_image_temp.Modality)
+            pixel_array_ = dicom_image_temp.pixel_array 
+            if normalize: 
+                temp_arr = double(pixel_array_)
+                pixel_array_ = uint8(255*((temp_arr - temp_arr.min()) / (temp_arr.max() - temp_arr.min())))
+            image_pixel_dict[image_id] = pixel_array_
+            image_modality_dict[image_id] = dicom_image_temp.Modality
         except: # if either or both attributes not found in dicom
             fail_count += 1
             print('Dicom Success, but attribute(s) not found. Image ID: ' + image_id)
             continue
         
-    return fail_count, image_id_info_dict
+    return fail_count, image_pixel_dict, image_modality_dict
         
     
