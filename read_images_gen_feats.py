@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import dicom
 import os
+import mahotas as mh
 
 # returns the pixel array of dicom image
 def read_dicom_image(image_path):
@@ -33,33 +34,9 @@ def read_images_from_folder(location):
 # for each image in dict, exi
 class image_descriptors():
 
-	# returns feature array obtained using sift algorithm
+	# returns a vector of global features (Haralick + average intensity)
 	@staticmethod
-	def orb(pixel_array):
-
-		# convert to grayscale
-		gray= cv2.cvtColor(pixel_array,cv2.COLOR_BGR2GRAY)
-
-		# use ORD. similar to SIFT + SURF - and is free to use (unlike the other 2)
-		orb = cv2.ORB()
-
-		# detector of the points in the image
-		#detector = cv2.FeatureDetector_create("SIFT")
-
-		# extractor of the detected points
-		#descriptor = cv2.DescriptorExtractor_create("SIFT")
-
-		#skp = detector.detect(pixel_array)
-
-		_, feats = orb.detectAndCompute(gray,None)
-
-		return feats
-
-	# if ellipse=True, then only ellipse of image keypoints extracted
-	@staticmethod
-	def sift(pixel_array, ellipse=False):
-
-		print(True)
+	def globalFeats(pixel_array, ellipse=False):
 
 		# convert to grayscale only if color - i.e. more than 1 channels
 		# image will have a color channel dim -> hence 3
@@ -83,6 +60,8 @@ class image_descriptors():
 
 			gray = pixel_array
 
+		print(True)
+
 		if ellipse:
 
 			# get image dimensions
@@ -95,10 +74,87 @@ class image_descriptors():
 
 			ellipse_mask = np.zeros_like(gray)
 
-			cv2.ellipse(ellipse_mask, (dx, dy), (ex, ey), 0, 0, 360, 255, -1)
+			# NOTE: for some reason in cv2 the x and y are opposite!
+			cv2.ellipse(ellipse_mask, center=(dy, dx), axes=(ey, ex),
+						angle=0, startAngle=0, endAngle=360, color=255,thickness=-1)
 
 			# use binary AND operator to gen required image
 			gray = np.bitwise_and(gray, ellipse_mask)
+
+
+		# Haralick
+		har = mh.features.haralick(gray)
+		har_mean = np.mean(har, 0) # col mean -- will have 13 cols
+
+		global_feats = list(har_mean)
+
+		# mean  + std intensity
+		global_feats.append(np.mean(gray))
+		global_feats.append(np.std(gray))
+
+		return np.array(global_feats)
+
+	# returns feature array obtained using sift algorithm
+	@staticmethod
+	def orb(pixel_array):
+
+		# convert to grayscale
+		gray= cv2.cvtColor(pixel_array,cv2.COLOR_BGR2GRAY)
+
+		# use ORD. similar to SIFT + SURF - and is free to use (unlike the other 2)
+		orb = cv2.ORB()
+
+		_, feats = orb.detectAndCompute(gray,None)
+
+		return feats
+
+	# if ellipse=True, then only ellipse of image keypoints extracted
+	@staticmethod
+	def sift(pixel_array, ellipse=False):
+
+		# convert to grayscale only if color - i.e. more than 1 channels
+		# image will have a color channel dim -> hence 3
+		if len(pixel_array.shape) == 3:
+
+			print(str(3))
+			# TODO: replace with something better
+			# hacky way of dealing with images that have color channels first
+			if pixel_array.shape[0] == 3: pixel_array = pixel_array.T
+
+			try:
+				gray= cv2.cvtColor(pixel_array,cv2.COLOR_BGR2GRAY)
+
+			except: # some pixel arrays have more than 3 color channels, we skip them
+
+				return None
+
+		elif len(pixel_array.shape) == 2:
+
+			print(str(2))
+
+			gray = pixel_array
+
+		print(True)
+
+		if ellipse:
+
+			# get image dimensions
+			x,y = gray.shape[:2]
+
+			dx, dy = int(x*0.5), int(y*0.5)
+
+			# major and minor axis
+			ex, ey = int(x*0.75)/2, int(y*0.75)/2
+
+			ellipse_mask = np.zeros_like(gray)
+
+			# NOTE: for some reason in cv2 the x and y are opposite!
+			cv2.ellipse(ellipse_mask, center=(dy, dx), axes=(ey, ex),
+						angle=0, startAngle=0, endAngle=360, color=255,thickness=-1)
+
+			# use binary AND operator to gen required image
+			gray = np.bitwise_and(gray, ellipse_mask)
+
 
 		# use sift
 		sift = cv2.SIFT()
@@ -190,6 +246,10 @@ def add_image_features(image_dict, kind = 'sift', ellipse=False):
 
 		print(str(image))
 
+		if kind == 'global':
+
+			image_feats_dict[image] = image_descriptors.globalFeats(image_dict[image], ellipse)
+
 		if kind == 'orb':
 
 			image_feats_dict[image] = image_descriptors.orb(image_dict[image])
@@ -211,4 +271,3 @@ def add_image_features(image_dict, kind = 'sift', ellipse=False):
 			image_feats_dict[image] = image_descriptors.mixed(image_dict[image])
 
 	return image_feats_dict
-

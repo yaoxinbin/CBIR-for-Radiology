@@ -116,17 +116,20 @@ def make_ellipse(img):
     return img
 
 
-img_test = np.array([[255]*100]*25)
-ellipse = make_ellipse(img_test)
-
-plt.imshow(img_test,'gray')
-plt.imshow(ellipse,'gray')
-
-
 if __name__ == '__main__':
-
-    import matplotlib.pyplot as plt
+    
     import os; os.chdir('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology/images_sample')
+
+    
+    import matplotlib.pyplot as plt
+    
+    img_test = np.array([[255]*100]*25)
+    ellipse = make_ellipse(img_test)
+    
+    plt.imshow(img_test,'gray')
+    plt.imshow(ellipse,'gray')
+
+
 
     img1 = cv2.imread('171_5',0)
     img2 = cv2.imread('170_10',0)
