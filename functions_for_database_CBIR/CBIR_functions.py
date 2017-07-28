@@ -38,22 +38,27 @@ def download_images(only_dicom=True,
 	# iterate through the images in the directory and save the right files
 	for a_tag in soup.find_all('a', href=True): # iterate through all the links
 		image_id = a_tag['href'] # this is unique for each image
-		image_loc = images_loc + '/' + image_id# image is a bs4 element obj
+		image_loc = images_loc + '/' + image_id # image is a bs4 element obj
 		# TODO: current saving to disk and then reading is tedious, try a simpler way
 		urllib.urlretrieve(image_loc, 'temp') # save the file as temp
 		try:
 			temp = dicom.read_file('temp') # to check it dicom... files have no extensions, so not sure of better way
 			os.rename('temp',image_id)
-			print(image_id)
+			print('dicom: '+image_id)
 		except:
 			if only_dicom: continue # skip image if not dicom
-			else:
+			if not only_dicom:
 				try:
-					temp = Image.open('temp') # check if file is an image
+					temp = plt.imread('temp') # check if file is an image
 					os.rename('temp',image_id)
-					print(image_id)
+					print('non-dicom: ', image_id)
 				except: continue
 
+	os.chdir('./..') # go back to parent dir
+
+################## FUNCTIONS BELOW FOR READING IN IMAGES #######################
+
+# for dicom only images
 # extracts the modality and pixel array for each dicom image and returns this data
 # in the form of a dictionary: {image_id:(pixel_arr, modality)}
 def extract_pixels_and_attributes(dicom_images_loc = 'C:\Users\syarlag1.DPU\Desktop\CBIR-for-Radiology\images_store',
@@ -96,28 +101,35 @@ def extract_pixels_and_attributes(dicom_images_loc = 'C:\Users\syarlag1.DPU\Desk
 
 
 
-################## FUNCTIONS BELOW FOR READING IN IMAGES #######################
-# returns the pixel array of dicom image
-def read_dicom_image(image_path):
-
-	return dicom.read_file(image_path)
-
-
 # returns a dictionary of images extracted from folder
-def read_images_from_folder(location):
+def read_images_from_folder(images_loc):
 
-	image_dict = {}
-	image_path_list = os.listdir(location)
+	os.chdir(images_loc)
+	image_ids_list = os.listdir('./')
 
-	for image_path in image_path_list:
+	image_pixel_dict = {} # to store pixel arr of each image
+	fail_count = 0 # count of number of images without required attributes
 
-		if image_path[-3:] == 'dcm': # if dicom image
-			image_dict[image_path]=read_dicom_image(location+image_path).pixel_array
+	# iterate through each image in the folder
+	for image_id in image_ids_list:
+		try: # check if image is dicom
+			image_temp = dicom.read_file(image_id) # read as dicom
+			pixel_array_ = image_temp.pixel_array
+			temp_arr = double(pixel_array_)
+			# normalize
+			pixel_array_ = uint8(255*((temp_arr - temp_arr.min()) / (temp_arr.max() - temp_arr.min())))
+			image_pixel_dict[image_id] = pixel_array_
 
-		else:
-			image_dict[image_path]=plt.imread(location+image_path)
+		except: # most likely due to non-dicom
+			try:
+				pixel_array_ = plt.imread(image_id)
+				image_pixel_dict[image_id] = pixel_array_
 
-	return image_dict
+			except: continue
+
+	os.chdir('./..') # go back to parent dir
+
+	return image_pixel_dict
 
 ############### FUNCTIONS BELOW FOR EXTRACTING IMAGE DESCRIPTORS ###############
 # returns a vector of global features (Haralick + average intensity)
@@ -240,6 +252,7 @@ def sift(pixel_array, ellipse=False):
 		gray = np.bitwise_and(gray, ellipse_mask)
 
 	# use sift
+    # TODO: why isnt SIFT computing for image_id = 1990_2?
 	sift = cv2.SIFT()
 
 	_, feats = sift.detectAndCompute(gray,None)
@@ -375,7 +388,7 @@ def kmeans_centers(image_feats_dict, k = 10, use_subset=False, subset_quantity=N
 # Use query=True for single query image matrix
 def bag_of_words(image_feats_dict, cluster_centers, query=True):
 
-	k = cluster_centers.shape[1] # number of clusters
+	k = cluster_centers.shape[0] # number of clusters
 
 	if not query:
 		# TODO: loops are slow --> replace with numpy matrix magic
@@ -384,7 +397,7 @@ def bag_of_words(image_feats_dict, cluster_centers, query=True):
 
 		for image_id, each_image in image_feats_dict.items():
 
-			image_hist_dict[image_id] = [0] * k
+			image_hist_dict[image_id] = np.array([0] * k)
 
 			for keypoint in each_image:
 

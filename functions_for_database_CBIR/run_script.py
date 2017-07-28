@@ -17,28 +17,73 @@
 
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
+import pickle
+
+os.chdir('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology/functions_for_database_CBIR')
+
 from CBIR_functions import * # reads in all the necessary functions for CBIR
 
-os.chdir('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology')
-
-images_folder = 'images_sample'
-images_percent_for_kmeans = 0.1
+images_folder = 'all_images_sample'
+images_percent_for_kmeans = 0.08
 cluster_count = 50
 query_image_id = '180_4'
+save_files = True
 
 # PART A
-download_images(only_dicom=False, folder_name= images_folder,
+download_images(only_dicom=False, folder_name = images_folder,
                 images_loc= 'http://rasinsrv04.cstcis.cti.depaul.edu/all_images/all_tf/')
 
 # PART B
 database_dict = read_images_from_folder('./'+images_folder+'/')
+
 database_SIFT_feats_dict = add_image_features(database_dict, kind='sift', ellipse=False)
+
+
+# remove invalid images -- sometimes the CV2 sift doesnt work.
+wrong_img_store = []
+for image_id in database_SIFT_feats_dict.keys():
+    try:
+        database_SIFT_feats_dict[image_id].shape
+    except:
+        wrong_img_store.append(image_id)
+        del database_SIFT_feats_dict[image_id]
+        del database_dict[image_id]
+
+# wrong_img_store =  ['1990_2', '1988_2', '308_26', '308_25', '422_7', '1835_1']
+
+# save as pickle (not enough memory to make a csv)
+if save_files:
+    with open('image_arrays.pickle','wb') as ip:
+        pickle.dump(database_dict, ip)
+        
+# save as csv
+#if save_files:
+#    database_dict_flatten = {k: v.reshape(-1) for k,v in database_dict.items()}
+#    database_df = pd.DataFrame(database_dict_flatten.values(), index=database_dict_flatten.keys())
+#    del database_dict_flatten
+#    database_df.to_csv('image_arrays.csv')
+#    del database_df
+
 
 # PART C (only use 10% of keypoints -- randomly selected)
 cluster_centers = kmeans_centers(database_SIFT_feats_dict, cluster_count, True, images_percent_for_kmeans)
 
+# save as csv
+if save_files:
+    cluster_centers_df = pd.DataFrame(cluster_centers)
+    cluster_centers_df.to_csv('cluster_centers.csv')
+    del cluster_centers_df
+
 # PART D
 database_BoW_dict =  bag_of_words(database_SIFT_feats_dict, cluster_centers, query=False)
+
+# save as csv
+if save_files:
+    database_BoW_df = pd.DataFrame(database_BoW_dict.values(), index=database_BoW_dict.keys())
+    database_BoW_df.to_csv('database_BoW.csv')
+    del database_BoW_df
+
 
 # PART E
 query_image_arr = plt.imread('./'+images_folder+'/'+query_image_id)
