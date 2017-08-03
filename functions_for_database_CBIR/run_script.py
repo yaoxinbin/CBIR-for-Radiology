@@ -24,12 +24,16 @@ os.chdir('C:/Users/syarlag1.DPU/Desktop/CBIR-for-Radiology/functions_for_databas
 
 from CBIR_functions import * # reads in all the necessary functions for CBIR
 
+# change these params as needed
 images_folder = 'all_images_sample'
 images_percent_for_kmeans = 0.08
 cluster_count = 50
-query_image_id = '180_4'
+query_image_id = '60_1'
 save_files = True
+ellipse = False
+image_return_count = 20
 
+# <------------------------The offine parts---------------------->
 # PART A
 download_images(only_dicom=False, folder_name = images_folder,
                 images_loc= 'http://rasinsrv04.cstcis.cti.depaul.edu/all_images/all_tf/')
@@ -37,7 +41,7 @@ download_images(only_dicom=False, folder_name = images_folder,
 # PART B
 database_dict = read_images_from_folder('./'+images_folder+'/')
 
-database_SIFT_feats_dict = add_image_features(database_dict, kind='sift', ellipse=False)
+database_SIFT_feats_dict = add_image_features(database_dict, kind='sift', ellipse=ellipse)
 
 
 # remove invalid images -- sometimes the CV2 sift doesnt work.
@@ -52,21 +56,7 @@ for image_id in database_SIFT_feats_dict.keys():
 
 # wrong_img_store =  ['1990_2', '1988_2', '308_26', '308_25', '422_7', '1835_1']
 
-# save as pickle (not enough memory to make a csv)
-if save_files:
-    with open('image_arrays.pickle','wb') as ip:
-        pickle.dump(database_dict, ip)
-        
-# save as csv
-#if save_files:
-#    database_dict_flatten = {k: v.reshape(-1) for k,v in database_dict.items()}
-#    database_df = pd.DataFrame(database_dict_flatten.values(), index=database_dict_flatten.keys())
-#    del database_dict_flatten
-#    database_df.to_csv('image_arrays.csv')
-#    del database_df
-
-
-# PART C (only use 10% of keypoints -- randomly selected)
+# PART C (only use 8% of keypoints -- randomly selected)
 cluster_centers = kmeans_centers(database_SIFT_feats_dict, cluster_count, True, images_percent_for_kmeans)
 
 # save as csv
@@ -84,7 +74,7 @@ if save_files:
     database_BoW_df.to_csv('database_BoW.csv')
     del database_BoW_df
 
-
+# <----------------------The online part------------------------->
 # PART E
 query_image_arr = plt.imread('./'+images_folder+'/'+query_image_id)
 
@@ -97,5 +87,14 @@ query_BoW_arr =  bag_of_words(query_SIFT_feats, cluster_centers, query=True)
 # PART H (using cosine distance NOT similarity)
 dist_dict = calc_dist_sim(query_BoW_arr, database_BoW_dict, method='cosine')
 
-# PART I
-closest_images = return_images(dist_dict, database_dict, k=10, distance=True, show=True)
+# PART I (k is the number of images to return)
+closest_images = return_images(dist_dict, database_dict, k=image_return_count, distance=True, show=True)
+
+# save result as csv
+if save_files:
+    closest_images = np.array(closest_images)
+    database_result_df = pd.DataFrame(closest_images[:,1], index=closest_images[:,0])
+    database_result_df.to_csv('closest_image_list.csv')
+    del database_result_df
+
+    

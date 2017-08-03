@@ -252,7 +252,7 @@ def sift(pixel_array, ellipse=False):
 		gray = np.bitwise_and(gray, ellipse_mask)
 
 	# use sift
-    # TODO: why isnt SIFT computing for image_id = 1990_2?
+	# TODO: why isnt SIFT computing for image_id = 1990_2?
 	sift = cv2.SIFT()
 
 	_, feats = sift.detectAndCompute(gray,None)
@@ -572,6 +572,7 @@ def combine_measures(local_dict, global_dict, weighting=0.5):
 def return_images(image_sim_dist_dict, image_dict, k=5, distance=True, show=True):
 
 	result_image_id_list = []
+	result_image_dist_list = []
 
 	# sort based on whether sim or dist measure
 	sorted_list = sorted(image_sim_dist_dict.items(), key=lambda x: x[1], reverse= not distance)
@@ -579,20 +580,20 @@ def return_images(image_sim_dist_dict, image_dict, k=5, distance=True, show=True
 	for i in range(k):
 
 		image_id = sorted_list[i][0]
-		image_name = 'result ' + str(i) + ': ' + image_id
 		result_image_id_list.append(image_id)
+		result_image_dist_list.append(image_sim_dist_dict[image_id])
 
 	if show:
 		for image_id in result_image_id_list:
-			image_dist_total = str(round(image_sim_dist_dict[image_id], 6))
 
+			image_dist_total = str(round(image_sim_dist_dict[image_id], 6))
 			print(image_dist_total)
 			plt.figure()
 			plt.imshow(image_dict[image_id], cmap='gray')
 			plt.title(image_id)
 			plt.show()
 
-	return result_image_id_list
+	return zip(result_image_id_list, result_image_dist_list)
 
 ###################################################################################
 
